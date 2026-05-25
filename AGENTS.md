@@ -111,12 +111,89 @@ Get-ChildItem -Force E:\development\usb-c-traffic-light-board\kicad | Where-Obje
 
 KiCad 10 本体主要提供交互式布线器，不是完整的一键自动布线器。若需要全自动布线，应接入外部 Freerouting 流程；当前机器 PATH 里未发现 `freerouting` 命令。没有 Freerouting 时，必须手工/脚本辅助布线并反复跑 DRC。
 
+## 本项目当前布线生成方法
+
+当前 PCB 不是靠手写 `.kicad_pcb` 文本拼出来的，而是通过 KiCad 自带 Python 接口 `pcbnew` 生成。入口脚本是：
+
+```text
+scripts/generate_kicad_pcb.py
+```
+
+重新生成 PCB 时使用：
+
+```powershell
+& 'E:\KiCad\10.0\bin\python.exe' E:\development\usb-c-traffic-light-board\scripts\generate_kicad_pcb.py
+```
+
+这个脚本做了这些事：
+
+- 新建 `pcbnew.BOARD()`，设置最小间距、最小线宽、过孔直径和钻孔。
+- 用 `FootprintLoad()` 从 KiCad 10 自带封装库加载 LED、电阻、电容、CH552G、USB-C、测试点和螺丝孔。
+- 明确创建 `5V`、`GND`、`USB_D+`、`USB_D-`、`CC1`、`CC2`、三路 LED 控制等网络。
+- 用 `set_pad_net()` 把每个焊盘挂到对应网络，避免 KiCad 只显示飞线但没有真实铜线。
+- 用 `PCB_TRACK` 生成实际铜线，用 `PCB_VIA` 生成过孔；正面和背面都参与布线。
+- 用 `Edge.Cuts` 多段线生成当前非矩形外轮廓、端部梯形和 8 个侧边避让槽。
+
+当初解决“满屏蓝线”的方式是：
+
+1. 先把所有元件焊盘明确分配到网络。
+2. 给每个网络补真实铜线，而不是只依赖 KiCad 的飞线提示。
+3. LED 阳极到限流电阻走短线，三路 GPIO 改成背面独立线槽，避免正面交叉。
+4. USB-C 的 D+/D- 从背面端口进入串联电阻，再通过过孔接到 CH552G。
+5. 5V 从 USB-C 背面进来，过孔到正面右侧母线，再分给 MCU 和电容。
+6. GND 做正反面母线，并给 LED、MCU、电容、CC 下拉电阻补过孔连接。
+7. 每次调整元件、外形或走线路径后都重新跑 `kicad-cli pcb drc`，按报告继续改，直到 0 违规、0 未连接。
+
+布线后必须运行：
+
+```powershell
+& 'E:\KiCad\10.0\bin\kicad-cli.exe' pcb drc 'E:\development\usb-c-traffic-light-board\kicad\usb_c_traffic_light_board.kicad_pcb' -o 'E:\development\usb-c-traffic-light-board\kicad\_check_pcb_drc.rpt'
+```
+
+合格输出必须包含：
+
+```text
+发现 0 条违规项
+发现 0 个未连接的项目
+```
+
+如果 DRC 里仍有 `unconnected`，或者 KiCad 里仍能看到蓝色飞线，就不能说 PCB 已完成。
+
+## 每次和用户对话后的收口步骤
+
+每轮完成用户交代的 PCB、文档、脚本或验证任务后，按这个顺序收口：
+
+1. 先确认最新用户请求，避免还在处理上一轮旧问题。
+2. 如果改了 KiCad 生成逻辑，先运行 `scripts/generate_kicad_pcb.py` 重新生成 PCB。
+3. 如果改了 `.kicad_pcb`，必须导出 PCB SVG，并运行 PCB DRC。
+4. 如果改了 `.kicad_sch`，必须导出原理图 SVG。
+5. 如果改了中文文档，必须跑乱码扫描。
+6. 跑 `git status --short` 和 `git diff --check`，确认没有意外文件和明显空白错误。
+7. 用户明确要求“落袋为安”“commit”“push”时，提交并推送到当前分支。
+8. 提交后用 `git log -1 --oneline` 和 `git status --short` 核对结果。
+9. 任务完成后，用 `apn-pushtool` 发简短通知。
+10. 最后用中文简要告诉用户：改了什么、验证结果、commit hash、是否已 push。
+
+推荐提交前检查命令：
+
+```powershell
+git status --short
+git diff --check
+& 'E:\KiCad\10.0\bin\kicad-cli.exe' pcb drc 'E:\development\usb-c-traffic-light-board\kicad\usb_c_traffic_light_board.kicad_pcb' -o 'E:\development\usb-c-traffic-light-board\kicad\_check_pcb_drc.rpt'
+```
+
+推荐通知命令：
+
+```powershell
+apn-pushtool send --title "红绿灯板" --body "任务已完成"
+```
+
 ## 编码检查
 
 本项目文档以简体中文为主。写入中文后，必须扫描乱码：
 
 ```powershell
-rg --text -n "锛|€|俙|����|�|\?\?\?" E:\development\usb-c-traffic-light-board --glob "!AGENTS.md"
+rg --text -n "\x{951b}|\x{20ac}|\x{4fd9}|\x{fffd}|\?\?\?" E:\development\usb-c-traffic-light-board
 ```
 
 期望没有匹配。
