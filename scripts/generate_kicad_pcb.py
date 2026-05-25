@@ -1,3 +1,5 @@
+import math
+
 import pcbnew
 
 
@@ -96,6 +98,15 @@ def add_line(board, x1, y1, x2, y2, layer, width=0.12):
     board.Add(item)
 
 
+def add_arc(board, x1, y1, xm, ym, x2, y2, layer, width=0.12):
+    item = pcbnew.PCB_SHAPE(board)
+    item.SetShape(pcbnew.SHAPE_T_ARC)
+    item.SetArcGeometry(v(x1, y1), v(xm, ym), v(x2, y2))
+    item.SetLayer(layer)
+    item.SetWidth(nm(width))
+    board.Add(item)
+
+
 def add_rect(board, x1, y1, x2, y2, layer, width=0.12):
     add_line(board, x1, y1, x2, y1, layer, width)
     add_line(board, x2, y1, x2, y2, layer, width)
@@ -108,55 +119,52 @@ def add_polyline(board, points, layer, width=0.1):
         add_line(board, start[0], start[1], end[0], end[1], layer, width)
 
 
+def circular_notch_points(side, center_y, half_chord=1.0, depth=0.75, segments=8):
+    radius = (half_chord * half_chord + depth * depth) / (2.0 * depth)
+    offset = radius - depth
+    if side == "right":
+        center_x = 14.0 + offset
+        start_angle = math.atan2(-half_chord, -offset)
+        end_angle = math.atan2(half_chord, -offset) - 2.0 * math.pi
+    else:
+        center_x = -offset
+        start_angle = math.atan2(half_chord, offset)
+        end_angle = math.atan2(-half_chord, offset)
+
+    points = []
+    for index in range(segments + 1):
+        ratio = index / segments
+        angle = start_angle + (end_angle - start_angle) * ratio
+        points.append((center_x + radius * math.cos(angle), center_y + radius * math.sin(angle)))
+    return points
+
+
 def add_mechanical_outline(board):
     # 照原板照片做的第一版近似轮廓：端部梯形窄边 10mm，高度暂按 4.5mm。
     # 左右两侧保留塑料柱避让槽。
-    # 避让槽按用户实测描述成对放置：从板底往上约 10/23/32/46 mm，
-    # 换算到本坐标系为 y=47/34/25/11 mm。
-    outline = [
-        (2.0, 0.0),
-        (12.0, 0.0),
-        (14.0, 4.5),
-        (14.0, 10.3),
-        (13.8, 10.3),
-        (13.8, 11.7),
-        (14.0, 11.7),
-        (14.0, 24.3),
-        (13.8, 24.3),
-        (13.8, 25.7),
-        (14.0, 25.7),
-        (14.0, 33.3),
-        (13.8, 33.3),
-        (13.8, 34.7),
-        (14.0, 34.7),
-        (14.0, 46.3),
-        (13.8, 46.3),
-        (13.8, 47.7),
-        (14.0, 47.7),
-        (14.0, 52.5),
-        (12.0, 57.0),
-        (2.0, 57.0),
-        (0.0, 52.5),
-        (0.0, 47.7),
-        (0.3, 47.7),
-        (0.3, 46.3),
-        (0.0, 46.3),
-        (0.0, 34.7),
-        (0.3, 34.7),
-        (0.3, 33.3),
-        (0.0, 33.3),
-        (0.0, 25.7),
-        (0.3, 25.7),
-        (0.3, 24.3),
-        (0.0, 24.3),
-        (0.0, 11.7),
-        (0.3, 11.7),
-        (0.3, 10.3),
-        (0.0, 10.3),
-        (0.0, 4.5),
-        (2.0, 0.0),
-    ]
-    add_polyline(board, outline, pcbnew.Edge_Cuts, 0.1)
+    # 避让槽按用户实测描述成对放置：从板底往上约 11/25/33/47 mm，
+    # 换算到本坐标系为 y=46/32/24/10 mm。
+    layer = pcbnew.Edge_Cuts
+    width = 0.1
+    notch_centers = [10.0, 24.0, 32.0, 46.0]
+    notch_half_chord = 1.5
+    notch_depth = 0.35
+
+    add_polyline(board, [(2.0, 0.0), (12.0, 0.0), (14.0, 4.5)], layer, width)
+
+    y = 4.5
+    for center_y in notch_centers:
+        add_line(board, 14.0, y, 14.0, center_y - notch_half_chord, layer, width)
+        add_polyline(board, circular_notch_points("right", center_y, notch_half_chord, notch_depth), layer, width)
+        y = center_y + notch_half_chord
+    add_polyline(board, [(14.0, y), (14.0, 52.5), (12.0, 57.0), (2.0, 57.0), (0.0, 52.5)], layer, width)
+
+    y = 52.5
+    for center_y in reversed(notch_centers):
+        add_line(board, 0.0, y, 0.0, center_y + notch_half_chord, layer, width)
+        add_polyline(board, circular_notch_points("left", center_y, notch_half_chord, notch_depth), layer, width)
+        y = center_y - notch_half_chord
+    add_polyline(board, [(0.0, y), (0.0, 4.5), (2.0, 0.0)], layer, width)
 
 
 def add_text(board, text, x, y, size=0.8, layer=pcbnew.F_SilkS):
@@ -263,7 +271,8 @@ def main():
     r3 = load_fp("Resistor_SMD", "R_0603_1608Metric", "R3", "1k", 4.0, 7.0, 90)
     r2 = load_fp("Resistor_SMD", "R_0603_1608Metric", "R2", "1k", 4.0, 29.0, 90)
     r1 = load_fp("Resistor_SMD", "R_0603_1608Metric", "R1", "1k", 4.0, 50.0, 90)
-    u1 = load_fp("Package_SO", "SOIC-16_3.9x9.9mm_P1.27mm", "U1", "CH552G", 7.0, 39.0, 0)
+    u1 = load_fp("Package_SO", "SOIC-16_3.9x9.9mm_P1.27mm", "U1", "CH552G", 7.0, 41.5, 0)
+    add_text(board, "CH552G", 8.0, 33.0, 0.8)
 
     r4 = load_fp("Resistor_SMD", "R_0603_1608Metric", "R4", "22R", 6.8, 27.5, 0, True)
     r5 = load_fp("Resistor_SMD", "R_0603_1608Metric", "R5", "22R", 9.5, 27.5, 0, True)
@@ -273,9 +282,9 @@ def main():
     c2 = load_fp("Capacitor_SMD", "C_0603_1608Metric", "C2", "100nF", 11.8, 39.5, 90)
     c1 = load_fp("Capacitor_SMD", "C_0805_2012Metric", "C1", "10uF", 11.8, 44.5, 90)
     j1 = load_fp("Connector_USB", "USB_C_Receptacle_G-Switch_GT-USB-7025", "J1", "\u80cc\u9762USB-C", 7.0, 23.0, 0, True)
-    tp_rst = load_fp("TestPoint", "TestPoint_Pad_D1.0mm", "TP1", "RST", 3.0, 44.8, 0)
+    tp_rst = load_fp("TestPoint", "TestPoint_Pad_D1.0mm", "TP1", "RST", 3.0, 47.5, 0)
     h1 = load_fp("MountingHole", "MountingHole_2mm", "H1", "\u4e0a\u87ba\u4e1d\u5b54", 10.8, 3.0, 0)
-    h2 = load_fp("MountingHole", "MountingHole_2mm", "H2", "\u4e0b\u87ba\u4e1d\u5b54", 3.4, 32.0, 0)
+    h2 = load_fp("MountingHole", "MountingHole_2mm", "H2", "\u4e0b\u87ba\u4e1d\u5b54", 3.4, 34.0, 0)
 
     for fp in [d1, d2, d3, r1, r2, r3, u1, r4, r5, r6, r7, c1, c2, c3, j1, tp_rst, h1, h2]:
         board.Add(fp)
@@ -334,9 +343,9 @@ def main():
 
     # 三路 GPIO 用背面独立线槽，避免正面长线交叉。
     for net_name, u_pad, r_pad, ux, uy, rx, ry, lane_x in [
-        ("LED_G", pad_by_number(u1, 4), pad_by_number(r3, 1), 3.2, 38.365, 3.2, 7.825, 1.0),
-        ("LED_Y", pad_by_number(u1, 3), pad_by_number(r2, 1), 2.8, 37.095, 2.8, 29.825, 2.0),
-        ("LED_R", pad_by_number(u1, 2), pad_by_number(r1, 1), 3.9, 35.825, 3.9, 50.825, 3.9),
+        ("LED_G", pad_by_number(u1, 4), pad_by_number(r3, 1), 3.2, 40.865, 3.2, 7.825, 1.0),
+        ("LED_Y", pad_by_number(u1, 3), pad_by_number(r2, 1), 2.8, 39.595, 2.8, 29.825, 2.0),
+        ("LED_R", pad_by_number(u1, 2), pad_by_number(r1, 1), 3.9, 38.325, 3.9, 50.825, 3.9),
     ]:
         net = nets[net_name]
         front_pad_to_back(board, net, u_pad, ux, uy)
@@ -346,10 +355,10 @@ def main():
     # USB 背面布线：端口 -> 串联电阻 -> 过孔 -> U1。
     back_pad_to_xy(board, nets["USB_D+_CONN"], pad_by_number(j1, "A6"), [(6.4, 22.4), (5.975, 22.4), (5.975, 27.5)], 0.20)
     back_pad_to_xy(board, nets["USB_D-_CONN"], pad_by_number(j1, "A7"), [(6.8, 22.0), (8.675, 22.0), (8.675, 27.5)], 0.20)
-    front_pad_to_back(board, nets["USB_D+"], pad_by_number(u1, 12), 10.1, 39.635, 0.20)
-    front_pad_to_back(board, nets["USB_D-"], pad_by_number(u1, 13), 10.7, 38.365, 0.20)
-    route_xy(board, nets["USB_D+"], [(7.625, 27.5), (7.625, 29.0), (9.8, 29.0), (9.8, 39.635), (10.1, 39.635)], 0.20, pcbnew.B_Cu)
-    route_xy(board, nets["USB_D-"], [(10.325, 27.5), (10.7, 27.5), (10.7, 38.365)], 0.20, pcbnew.B_Cu)
+    front_pad_to_back(board, nets["USB_D+"], pad_by_number(u1, 12), 10.1, 42.135, 0.20)
+    front_pad_to_back(board, nets["USB_D-"], pad_by_number(u1, 13), 10.7, 40.865, 0.20)
+    route_xy(board, nets["USB_D+"], [(7.625, 27.5), (7.625, 29.0), (9.8, 29.0), (9.8, 42.135), (10.1, 42.135)], 0.20, pcbnew.B_Cu)
+    route_xy(board, nets["USB_D-"], [(10.325, 27.5), (10.7, 27.5), (10.7, 40.865)], 0.20, pcbnew.B_Cu)
 
     # CC 下拉。
     back_pad_to_xy(board, nets["CC1"], pad_by_number(j1, "A5"), [(5.6, 21.0), (3.175, 21.0), (3.175, 25.0)], 0.20)
@@ -361,10 +370,10 @@ def main():
     add_via(board, nets["5V"], 8.0, 14.8)
     route_xy(board, nets["5V"], [(8.0, 14.8), (13.0, 14.8), (13.0, 45.5)], 0.30, pcbnew.F_Cu)
     back_pad_to_xy(board, nets["5V"], pad_by_number(j1, "A4"), [(4.8, 14.8), (8.0, 14.8)], 0.28)
-    route_points(board, nets["5V"], [pad_by_number(u1, 15).GetPosition(), v(13.0, 35.825)], 0.28, pcbnew.F_Cu)
+    route_points(board, nets["5V"], [pad_by_number(u1, 15).GetPosition(), v(10.6, 37.6), v(13.0, 37.6), v(13.0, 38.325)], 0.28, pcbnew.F_Cu)
     for pad, py in [(pad_by_number(c2, 1), 40.275), (pad_by_number(c1, 1), 45.5)]:
         route_points(board, nets["5V"], [pad.GetPosition(), v(13.0, py)], 0.26, pcbnew.F_Cu)
-    route_pad_to_pad(board, nets["V33"], pad_by_number(u1, 16), pad_by_number(c3, 1), [(11.8, 34.555)], 0.20)
+    route_pad_to_pad(board, nets["V33"], pad_by_number(u1, 16), pad_by_number(c3, 1), [(11.8, 37.055)], 0.20)
 
     # 地线母线。
     route_xy(board, nets["GND"], [(12.8, 8.4), (12.8, 51.4)], 0.35, pcbnew.B_Cu)
@@ -377,16 +386,16 @@ def main():
         (pad_by_number(d1, 1), 12.2, 8.4),
         (pad_by_number(d2, 1), 12.2, 30.4),
         (pad_by_number(d3, 1), 12.2, 51.4),
-        (pad_by_number(u1, 14), 12.0, 37.095),
         (pad_by_number(c3, 2), 12.3, 33.225),
         (pad_by_number(c2, 2), 12.3, 38.725),
         (pad_by_number(c1, 2), 12.3, 43.5),
     ]:
         front_pad_to_back(board, nets["GND"], pad, px, py, 0.24)
         route_xy(board, nets["GND"], [(px, py), (12.8, py)], 0.28, pcbnew.B_Cu)
+    route_pad_to_pad(board, nets["GND"], pad_by_number(u1, 14), pad_by_number(c2, 2), [(10.4, 39.2), (11.2, 38.725)], 0.20)
 
     # 复位测试点。
-    route_pad_to_pad(board, nets["RST"], pad_by_number(u1, 6), pad_by_number(tp_rst, 1), [(3.0, 40.905)], 0.20)
+    route_pad_to_pad(board, nets["RST"], pad_by_number(u1, 6), pad_by_number(tp_rst, 1), [(2.7, 43.405), (2.7, 47.5)], 0.20)
 
     pcbnew.SaveBoard(BOARD_PATH, board)
 
