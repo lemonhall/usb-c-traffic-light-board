@@ -1,0 +1,20 @@
+(kicad_sch
+  (version 20231120)
+  (generator "codex")
+  (generator_version "1")
+  (uuid "b5bd1110-0974-4ad9-8001-2c5940216c01")
+  (paper "A4")
+  (title_block
+    (title "USB-C 红绿灯控制板")
+    (date "2026-05-25")
+    (rev "A-draft")
+    (company "lemonhall")
+    (comment 1 "CH552G USB 串口控制红黄绿三颗灯")
+  )
+  (text "原理图草案。选定 USB-C 母座和 CH552G KiCad 符号后补全器件。"
+    (exclude_from_sim no)
+    (at 40 40 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "9ad27895-cafa-4df2-808d-fbf2f33b4145")
+  )
+)
