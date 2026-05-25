@@ -16,8 +16,17 @@
 - 板宽：`14mm`
 - 第一版板框先按矩形处理。
 - 三颗灯从上到下暂定为：绿、黄、红。
-- USB-C 暂定放在红灯一端；如果外壳开口方向不同，后续再反向调整。
+- USB-C 暂定放在背面开口位置，对应原外壳拨动开关穿出的位置。
 - 孔位、缺口、圆角、灯中心坐标等，等你给精确尺寸后再修。
+
+## 下一步顺序
+
+1. 机械复核：量原板孔位、缺口、圆角、灯中心坐标、USB-C 后壳开口位置，把板框从当前矩形改成更贴原壳的形状。
+2. USB-C 完整性复核：按最终采购的连接器封装，复核 `VBUS`、`GND`、`CC1`、`CC2`、`D+`、`D-`，确认正反插都能稳定供电和通信。
+3. 生成生产文件：用 KiCad CLI 导出 Gerber 和钻孔文件，再用 Gerber 预览检查铜层、板框、孔、阻焊和丝印。
+4. 小批打样前审查：逐项核对 BOM、封装方向、LED 极性、USB-C 型号、CH552G 供电和下载方式。
+
+当前建议先做第 1 步和第 2 步。它们决定这块板能不能真的塞回外壳，以及插上电脑后能不能稳定识别。
 
 ## 电气方案
 
@@ -63,6 +72,7 @@ S R=1 Y=0 G=1
 - `docs/hardware/requirements.md`：需求和边界。
 - `docs/hardware/bom.md`：第一版物料清单。
 - `docs/hardware/pinout.md`：引脚和网络分配。
+- `docs/hardware/mechanical-measurement-guide.md`：原板外轮廓和孔位测量指南。
 - `docs/hardware/serial-protocol.md`：电脑控制协议。
 - `docs/hardware/schematic.md`：完整原理图连接说明。
 - `docs/hardware/schematic.svg`：可直接打开查看的完整原理图。
