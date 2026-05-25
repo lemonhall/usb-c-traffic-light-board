@@ -64,6 +64,9 @@ S R=1 Y=0 G=1
 - `docs/hardware/bom.md`：第一版物料清单。
 - `docs/hardware/pinout.md`：引脚和网络分配。
 - `docs/hardware/serial-protocol.md`：电脑控制协议。
+- `docs/hardware/schematic.md`：完整原理图连接说明。
+- `docs/hardware/schematic.svg`：可直接打开查看的完整原理图。
+- `docs/hardware/pcb-layout.svg`：第一版 PCB 顶层布局草案。
 - `references/original-board-photo.md`：原板照片观察记录。
 - `kicad/`：KiCad 工程骨架和第一版板框。
 - `firmware/README.md`：固件设计说明。

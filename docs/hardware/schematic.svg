@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <style>
+    text { font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; fill: #111; }
+    .title { font-size: 34px; font-weight: 700; }
+    .note { font-size: 20px; }
+    .label { font-size: 20px; font-weight: 600; }
+    .small { font-size: 16px; }
+    .wire { stroke: #111; stroke-width: 3; fill: none; }
+    .thin { stroke: #111; stroke-width: 2; fill: none; }
+    .box { fill: #fff; stroke: #111; stroke-width: 3; rx: 8; }
+    .part { fill: #f8fafc; stroke: #111; stroke-width: 2; rx: 6; }
+    .power { fill: #dcfce7; stroke: #166534; stroke-width: 2; rx: 6; }
+    .usb { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 2; rx: 6; }
+    .led-red { fill: #fee2e2; stroke: #991b1b; stroke-width: 2; rx: 6; }
+    .led-yellow { fill: #fef9c3; stroke: #a16207; stroke-width: 2; rx: 6; }
+    .led-green { fill: #dcfce7; stroke: #166534; stroke-width: 2; rx: 6; }
+  </style>
+
+  <text x="60" y="58" class="title">USB-C 红绿灯控制板完整原理图（第一版）</text>
+  <text x="60" y="92" class="note">主控：CH552G SOP-16；供电和控制：USB-C；电脑控制：USB CDC 虚拟串口。</text>
+
+  <rect x="70" y="170" width="260" height="390" class="usb"/>
+  <text x="100" y="210" class="label">J1 USB-C 母座</text>
+  <text x="100" y="250" class="small">A4/B4/A9/B9：VBUS</text>
+  <text x="100" y="285" class="small">A1/B1/A12/B12：GND</text>
+  <text x="100" y="320" class="small">A6/B6：D+</text>
+  <text x="100" y="355" class="small">A7/B7：D-</text>
+  <text x="100" y="390" class="small">A5：CC1</text>
+  <text x="100" y="425" class="small">B5：CC2</text>
+  <text x="100" y="480" class="small">只做 USB2.0 受电设备</text>
+
+  <rect x="470" y="135" width="330" height="540" class="box"/>
+  <text x="560" y="178" class="label">U1 CH552G</text>
+  <text x="530" y="215" class="small">15 VCC</text>
+  <text x="530" y="250" class="small">16 V33</text>
+  <text x="530" y="285" class="small">14 GND</text>
+  <text x="530" y="335" class="small">12 P3.6 / UDP</text>
+  <text x="530" y="370" class="small">13 P3.7 / UDM</text>
+  <text x="530" y="435" class="small">2 P1.4 -> 红灯</text>
+  <text x="530" y="470" class="small">3 P1.5 -> 黄灯</text>
+  <text x="530" y="505" class="small">4 P1.6 -> 绿灯</text>
+  <text x="530" y="570" class="small">6 RST -> 测试焊盘</text>
+
+  <rect x="945" y="165" width="185" height="70" class="led-red"/>
+  <text x="980" y="208" class="label">R1 1k</text>
+  <rect x="1190" y="165" width="185" height="70" class="led-red"/>
+  <text x="1225" y="208" class="label">D3 红灯</text>
+
+  <rect x="945" y="305" width="185" height="70" class="led-yellow"/>
+  <text x="980" y="348" class="label">R2 1k</text>
+  <rect x="1190" y="305" width="185" height="70" class="led-yellow"/>
+  <text x="1225" y="348" class="label">D2 黄灯</text>
+
+  <rect x="945" y="445" width="185" height="70" class="led-green"/>
+  <text x="980" y="488" class="label">R3 1k</text>
+  <rect x="1190" y="445" width="185" height="70" class="led-green"/>
+  <text x="1225" y="488" class="label">D1 绿灯</text>
+
+  <rect x="370" y="740" width="220" height="70" class="power"/>
+  <text x="400" y="783" class="label">C1 10uF</text>
+  <rect x="620" y="740" width="220" height="70" class="power"/>
+  <text x="650" y="783" class="label">C2 100nF</text>
+  <rect x="870" y="740" width="220" height="70" class="power"/>
+  <text x="900" y="783" class="label">C3 100nF</text>
+
+  <rect x="360" y="325" width="80" height="42" class="part"/>
+  <text x="373" y="353" class="small">R4 22Ω</text>
+  <rect x="360" y="382" width="80" height="42" class="part"/>
+  <text x="373" y="410" class="small">R5 22Ω</text>
+  <rect x="360" y="460" width="100" height="42" class="part"/>
+  <text x="373" y="488" class="small">R6 5.1k</text>
+  <rect x="360" y="518" width="100" height="42" class="part"/>
+  <text x="373" y="546" class="small">R7 5.1k</text>
+
+  <path d="M330 245 H470" class="wire"/>
+  <text x="365" y="235" class="small">5V</text>
+  <path d="M330 285 H470" class="wire"/>
+  <text x="365" y="278" class="small">GND</text>
+
+  <path d="M330 320 H360" class="wire"/>
+  <path d="M440 346 H470" class="wire"/>
+  <text x="445" y="335" class="small">UDP</text>
+
+  <path d="M330 355 H360 V403" class="wire"/>
+  <path d="M440 403 H470" class="wire"/>
+  <text x="445" y="395" class="small">UDM</text>
+
+  <path d="M330 390 H360" class="wire"/>
+  <path d="M460 481 H515" class="wire"/>
+  <path d="M515 481 V650" class="wire"/>
+  <text x="530" y="654" class="small">GND</text>
+
+  <path d="M330 425 H360" class="wire"/>
+  <path d="M460 539 H515" class="wire"/>
+  <path d="M515 539 V650" class="wire"/>
+
+  <path d="M800 435 H945" class="wire"/>
+  <path d="M1130 200 H1190" class="wire"/>
+  <path d="M1375 200 H1450 V650" class="wire"/>
+
+  <path d="M800 470 H900 V340 H945" class="wire"/>
+  <path d="M1130 340 H1190" class="wire"/>
+  <path d="M1375 340 H1450" class="wire"/>
+
+  <path d="M800 505 H890 V480 H945" class="wire"/>
+  <path d="M1130 480 H1190" class="wire"/>
+  <path d="M1375 480 H1450" class="wire"/>
+  <text x="1460" y="655" class="small">GND</text>
+
+  <path d="M480 740 V690" class="wire"/>
+  <path d="M730 740 V690" class="wire"/>
+  <path d="M980 740 V690" class="wire"/>
+  <path d="M365 690 H1100" class="wire"/>
+  <text x="365" y="680" class="small">5V / 去耦</text>
+  <path d="M480 810 V850 H980 V810" class="wire"/>
+  <text x="700" y="878" class="small">GND</text>
+
+  <rect x="1120" y="705" width="300" height="140" class="part"/>
+  <text x="1150" y="745" class="label">测试焊盘</text>
+  <text x="1150" y="780" class="small">5V、GND、D+、D-、RST</text>
+  <text x="1150" y="815" class="small">红灯、黄灯、绿灯</text>
+
+  <text x="60" y="930" class="note">说明：这是第一版完整电路连接图；下单前仍需按实际 USB-C 母座、CH552G 封装、外壳尺寸复核 PCB 封装和机械位置。</text>
+</svg>
+

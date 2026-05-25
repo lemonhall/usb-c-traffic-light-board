@@ -1,0 +1,4 @@
+# KiCad 本地编辑缓存
+kicad/.history/
+kicad/~*.lck
+kicad/*.kicad_prl
